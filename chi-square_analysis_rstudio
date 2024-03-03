@@ -1,0 +1,138 @@
+
+library("rmarkdown")
+
+##read in data
+ts1_data <- read.csv('C:/Users/Ruth Wright/OneDrive/Desktop/WGU MSDA/teleco_time_series_extracted.csv')
+
+##plot data
+plot(ts1_data, type = "l", col = "green", xlab = "Day Number", ylab = "Revenue (in Millions)", main = "Revenue over past 2 years")
+
+##view structure of data and confirm it is a dataframe
+str(ts_data)
+
+##summary
+summary(ts_data)
+
+plot(ts_data)
+
+##check if data is time series data
+is.ts(ts_data)
+
+##check for na values
+colSums(is.na(ts_data))
+
+##check for null values
+is.null(ts_data)
+
+##check for duplicates
+anyDuplicated(ts_data)
+
+
+
+##convert to vector and confirm
+clean_data <- ts_data[['Revenue']]
+
+is.vector(clean_data)
+
+##convert to vector and confirm
+cl_ts_data <- ts1_data[['Revenue']]
+
+##convert to time series object and confirm
+time_series2 <- ts(cl_ts_data, frequency = 731/24)
+
+
+#difference time_series1 data
+ds.diff <- diff(time_series2)
+
+
+
+#split cleaned data into training and testing data
+ds.train <- ts(time_series2[1:(length(time_series2)-146)], frequency=731/24)
+
+
+ds.test <- ts(time_series2[(length(time_series2) - 145):length(time_series2)], frequency=731/4)
+
+
+
+#detect seasonality of original data
+data_decomposed <- decompose(time_series2)
+plot(data_decomposed$seasonal)
+
+
+#detect trend of original data
+plot(data_decomposed$trend)
+
+
+#detect seasonality in differenced data
+clean_data_decomposed <- decompose(ds.diff)
+plot(clean_data_decomposed$seasonal)
+
+plot(clean_data_decomposed, col = "blue")
+
+#detect trend in differenced data
+plot(clean_data_decomposed$trend)
+
+
+#generate autocorrelation function (acf) for original and differenced datasets
+acf(time_series2)
+
+acf(ds.diff)
+
+#generate partial auto correlation function (pacf) for original and differenced datasets
+pacf(time_series2)
+pacf(ds.diff)
+
+
+#view spectral density of training dataset and differenced dataset
+par(mfcol = c(2, 2))
+
+library("astsa")
+mvspec(ds.train, log = "yes")
+mvspec(ds.train, spans = 15, log = "no")
+mvspec(ds.train, spans = 73, log = "no")
+mvspec(ds.train, log = "no")
+
+par(mfcol = c(2,2))
+mvspec(ds.diff, log = "yes")
+mvspec(ds.diff, spans = 15, log = "no")
+mvspec(ds.diff, spans = 73, log = "no")
+mvspec(ds.diff, log = "no")
+
+##open forecast library to use sarima() functions
+library("forecast")
+
+##inspect acf and pacf of training data set
+acf(ds.train)
+pacf(ds.train)
+
+
+
+##try different parameters based on acf and pacf graphs
+sarima(ds.train, p = 1, d = 1, q = 0)
+sarima(ds.test, p = 1, d = 1, q = 0)
+
+sarima(ds.train, p = 2, d = 1, q = 1)
+
+
+sarima(ds.train, p = 3, d = 1, q = 0)
+
+
+
+
+
+#use the auto_arima function to verify best model
+auto.arima(ds.train)
+
+##forecast model onto testing data and original data set
+sarima.for(ds.train, n.ahead = 90, p = 2, d =1, q = 0, plot.all = T, xlab = "months")
+
+par(mfcol = c(1,1))
+plot(ds.test, xlab = "months")
+
+sarima.for(time_series2, n.ahead = 90, p = 1, d = 1, q = 0, plot.all = T, xlab = "months",
+           main = "Revenue Forecast")
+
+
+##test model against testing data
+
+sarima(ds.test, p = 1, d = 1, q = 0)
